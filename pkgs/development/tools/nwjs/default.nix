@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchurl, buildEnv, makeWrapper
+{ stdenv, lib, fetchurl, buildEnv, makeWrapper, autoPatchelfHook
 
 , xorg, alsa-lib, at-spi2-core, dbus, glib, gtk3, atk, pango, freetype
 , fontconfig , gdk-pixbuf, cairo, mesa, nss, nspr, expat, systemd
@@ -35,22 +35,22 @@ let
 
 in stdenv.mkDerivation rec {
   pname = "nwjs";
-  version = "0.54.1";
+  version = "0.81.0";
 
   src = if sdk then fetchurl {
     url = "https://dl.nwjs.io/v${version}/nwjs-sdk-v${version}-linux-${bits}.tar.gz";
-    sha256 = if bits == "x64" then
-      "sha256-1qeU4+EIki0M7yJPkRuzFwMdswfDOni5gltdmM6A/ds=" else
-      "sha256-wDEGePE9lrKa6OAzeiDLhVj992c0TJgiMHb8lJ4PF80=";
+    hash = if bits == "x64" then
+      "sha256-nZ+Bxdu8g/1DmJUZZRz1h7DlNj++r6cWsbNPDbrjnFU=" else
+      "sha256-7NTDhhvBKJVsCqsmz0C3w8n2+NOtN0pYIh4QixkLuSs=";
   } else fetchurl {
     url = "https://dl.nwjs.io/v${version}/nwjs-v${version}-linux-${bits}.tar.gz";
-    sha256 = if bits == "x64" then
-      "sha256-TACEM06K2t6dDXRD44lSW7GRi77yzSW4BZJw8gT+fl4=" else
-      "sha256-yX9knqFV5VQTT3TJDmQoDgt17NqH8fLt+bLQAqKleTU=";
+    hash = if bits == "x64" then
+      "sha256-mUeTD2lVhouHYZzFAwrT/sTfPdwzhpgBuGUQdvKjUCQ=" else
+      "sha256-1v2ERpnKNuPV/lEKyi1HzhgTR8++MBqkzq3SChblTM8=";
   };
 
-  # we have runtime deps like sqlite3 that should remain
-  dontPatchELF = true;
+  nativeBuildInputs = [ makeWrapper autoPatchelfHook ];
+  runtimeDependencies = [ sqlite libuuid udev ];
 
   installPhase =
     let ccPath = lib.makeLibraryPath [ stdenv.cc.cc ];
@@ -85,8 +85,6 @@ in stdenv.mkDerivation rec {
       mkdir $out/lib
       ln -s $out/share/nwjs/lib/libnw.so $out/lib/libnw.so
   '';
-
-  nativeBuildInputs = [ makeWrapper ];
 
   meta = with lib; {
     description = "An app runtime based on Chromium and node.js";
